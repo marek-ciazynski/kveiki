@@ -1,5 +1,7 @@
 # Kveiki
-
+![Main menu](/screenshots/1.png)
+![Example level](/screenshots/2.png)
+![Time](/screenshots/3.png)
 
 ### Running game
 ```
