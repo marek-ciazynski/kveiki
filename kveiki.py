@@ -1,5 +1,5 @@
 #-*- coding: utf-8 -*-
-import os
+import os,sys
 import linecache
 import curses
 import time
@@ -7,71 +7,177 @@ import atexit
 import signal
 
 @atexit.register
-def close_curses():
+def atclose():
+	signal.signal(signal.SIGALRM,signal.SIG_IGN)
+	#Wyświetlenie rankingu i wpisanie się do niego
+	if not outranked:
+		winlin, wincol =  stdscr.getmaxyx()
+		stdscr.clear()
+		stdscr.hline(0,0,' ', wincol,curses.A_REVERSE)
+		stdscr.hline(winlin-1,0,' ', wincol,curses.A_REVERSE)
+		stdscr.addstr(0,(wincol/2)-4,'Ranking',curses.color_pair(1))
+		
+		times.append(minutes+':'+sec)
+		srednia=0
+		ss=0
+		sm=0
+		for i in times:
+			m,s=i.split(':')
+			s=float(s)
+			m=int(m)
+			s+=m*60
+			srednia+=s
+			ss+=s
+		n=int(len(times))
+		fl_srednia=float(srednia)/n
+		srednia=int(srednia)/n
+		m=srednia/60
+		s=fl_srednia%60
+		s=round(s,1)
+		if s<10: sep='0'
+		else: sep = ''
+		stdscr.addstr(winlin-1,1,'Czas',curses.color_pair(1)+curses.A_BOLD)
+		stdscr.addstr(winlin-1,wincol-16,'Srednia: '+str(m)+':'+sep+str(s),curses.A_REVERSE)
+		sm=ss/60
+		ss=ss%60
+		sm=int(sm)
+		if ss<10: sep='0'
+		else: sep = ''
+		stdscr.addstr(winlin-1,wincol-30,'Suma: '+str(sm)+':'+sep+str(ss),curses.A_REVERSE)
+		
+		ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
+		if not os.path.exists(ranking_path):
+			rankfile = open(ranking_path, 'w+')
+			rankfile.close()
+		rankfile = open(ranking_path, 'rw')
+		value = []
+		for i in xrange(1,len(rankfile.readlines())+1):
+			linia = linecache.getline(ranking_path,i)
+			linia = linia.strip('\n')
+			value.append( linia )
+		
+		psep = ''
+		pos = 1
+		printed_new = False
+		for i in value:
+			psep = ''
+			time.sleep(0.05)
+			if not pos>=10: psep = ' '
+			if stdscr.getyx()[0] == winlin-3:
+				break
+			elif printed_new == False and stdscr.getyx()[0] == winlin-5:
+				stdscr.addstr(winlin-4,(wincol/2)-14,'...')
+				stdscr.addstr(winlin-3,(wincol/2)-10,'_______________',curses.A_BOLD)
+				inputY = pos+3
+				inputX = (wincol/2)-10
+				pos = 1
+				allpos = 1
+				for j in value:
+					(jtime,jplayer) = j.split(' ')
+					ktime = ''
+					for k in jtime:
+						if not (k == ':'):
+							ktime = ktime+k
+							stdscr.refresh()
+					if float( ktime ) < float( str(sm)+str(ss) ):
+						pos+=1
+						allpos+=1
+					else:
+						allpos+=1
+				stdscr.addstr(winlin-3,(wincol/2)-14,str(pos)+'. '+psep+19*' '+str(sm)+':'+sep+str(ss),curses.A_BOLD)
+				if pos == allpos: your_pos = -1
+				else: your_pos=pos
+				printed_new = True
+				break
+			(itime,iplayer) = i.split(' ')
+			jitime = ''
+			for j in itime:
+				if not (j == ':'):
+					jitime = jitime+j
+					stdscr.refresh()
+			if float( jitime ) < float( str(sm)+str(ss) ) or printed_new:
+				whchs = 19-len(iplayer)
+				stdscr.addstr(pos+2,(wincol/2)-14,str(pos) + '. ' + psep + iplayer + whchs*' ' + itime)
+				pos+=1
+			else:
+				stdscr.addstr(pos+2,(wincol/2)-14,str(pos)+'. '+psep+19*' '+str(sm)+':'+sep+str(ss),curses.A_BOLD)
+				stdscr.addstr(pos+2,(wincol/2)-10,'_______________',curses.A_BOLD)
+				inputY = pos+2
+				inputX = (wincol/2)-10
+				printed_new = True
+				your_pos = pos
+				pos+=1
+				whchs = 19-len(iplayer)
+				stdscr.addstr(pos+2,(wincol/2)-14,str(pos) + '. ' + psep + iplayer + whchs*' ' + itime)
+				pos+=1
+		if not printed_new:
+			stdscr.addstr(pos+2,(wincol/2)-14,str(pos)+'. '+psep+19*' '+str(sm)+':'+sep+str(ss),curses.A_BOLD)
+			stdscr.addstr(pos+2,(wincol/2)-10,'_______________',curses.A_BOLD)
+			inputY = pos+2
+			inputX = (wincol/2)-10
+			if pos == 1: your_pos = 2
+			else: your_pos = -1
+		stdscr.refresh()
+		curses.echo()
+		stdscr.attron(curses.A_BOLD)
+		player_name = ' '
+		while player_name.find(' ') != -1 or player_name == '' or len(player_name) > 15:
+			stdscr.addstr(inputY,inputX,'_______________')
+			player_name = stdscr.getstr(inputY,inputX)
+		whchs = 15-len(player_name)
+		stdscr.addstr(inputY,inputX+len(player_name),whchs*' ')
+		stdscr.hline(0,0,' ',wincol)
+		if your_pos == 1:
+			stdscr.addstr(0,(wincol/2)-5,'Pierwszy!!!',curses.color_pair(12)+curses.A_BOLD)
+		elif your_pos == -1:
+			stdscr.addstr(0,(wincol/2)-4,'Slabo :(',curses.color_pair(11)+curses.A_BOLD)
+		else:
+			stdscr.addstr(0,(wincol/2)-5,'Gratulacje!',curses.color_pair(2)+curses.A_BOLD)
+		stdscr.refresh()
+		time.sleep(1.5)
+		#Zapisywanie pliku rankingu
+		rank_sorted = []
+		if value != '':
+			for i in xrange(0,len(value)):
+				rank_sorted.append( linecache.getline(ranking_path,i) )
+		value.append(str(sm)+':'+sep+str(ss)+' '+player_name)
+		rank_sorted=sorted(value)
+		
+		##for j in value
+		#(vtime,vplayer) = j.split(' ')
+		#ivtime = ''
+		#for i in vtime:
+		#	if not (i == ':'):
+		#		ivtime = ivtime+i
+		#		stdscr.refresh()
+		#if float( ivtime ) < float( str(sm)+str(ss) ):
+		#	rank_sorted.append(str(sm)+':'+sep+str(ss)+' '+player_name)
+		#else:
+		#	rank_sorted.append(j)
+		
+		rankfile = open(ranking_path, 'w')
+		for item in rank_sorted:
+			rankfile.write(item+'\n')
+		#rankfile.writelines(rank_sorted)
+		rankfile.close()
+
+	
 	curses.nocbreak()
 	stdscr.keypad(0)
-	curses.echo()
 	curses.endwin()
 	print '\nDziękuję za granie w Kveiki!'
 	print '------------------------------'
-	print 'Czas przechodzenia poszczególnych poziomów:'
-	times.append(minutes+':'+sec)
-	srednia=0
-	ss=0
-	sm=0
-	no=1
-	for i in times:
-		print str(no)+': '+i
-		m,s=i.split(':')
-		s=float(s)
-		m=int(m)
-		s+=m*60
-		srednia+=s
-		no+=1
-		ss+=s
-	n=int(len(times))
-	fl_srednia=float(srednia)/n
-	srednia=int(srednia)/n
-	m=srednia/60
-	s=fl_srednia%60
-	s=round(s,1)
-	if s<10: sep='0'
-	else: sep = ''
-	print ' średnia: '+str(m)+':'+sep+str(s)
-	sm=ss/60
-	ss=ss%60
-	sm=int(sm)
-	if ss<10: sep='0'
-	else: sep = ''
-	print ' suma: '+str(sm)+':'+sep+str(ss)
-	
-	if outranked:
-		print "\nNie przeszedłeś całego level set'u."
+	if not outranked:
+		print 'Czas przechodzenia poszczególnych poziomów:'
+		no=1
+		for i in times:
+			print str(no)+': '+i
+			no+=1
+		print ' średnia: '+str(m)+':'+sep+str(s)
+		print ' suma: '+str(sm)+':'+sep+str(ss)
 	else:
-		player_name = raw_input('\nTwój nick >\033[0;0;1m')
-		if player_name.strip() != '':
-			ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
-			rankfile = open(ranking_path, 'rw+')
-			value = []
-			print ranking_path
-			for i in xrange(1,len(rankfile.readlines())+1):
-				linia = linecache.getline(ranking_path,i)
-				linia = linia.strip('\n')
-				value.append( linia )
-			rank_sorted = []
-			if value != '':
-				for i in xrange(0,len(value)):
-					rank_sorted.append( linecache.getline(ranking_path,i) )
-			value.append(str(sm)+':'+sep+str(ss)+' '+player_name)
-			rank_sorted=sorted(value)
-			print rank_sorted
-			rankfile = open(ranking_path, 'w')
-			for item in rank_sorted:
-				rankfile.write(item+'\n')
-			#rankfile.writelines(rank_sorted)
-			rankfile.close()
-			print '\033[0;0;0m'
-
+		print "\nNie przeszedłeś całego level set'u."
+	print '\033[0;0;0m'
 
 
 class player:
@@ -380,10 +486,6 @@ def main_game():
 		if a>lvl_sizex: lvl_sizex=a
 	if lvl_sizex<50: lvl_sizex=50
 
-	#if lvl_sizex>wincol:
-	#	sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=winlin, cols=lvl_sizex))
-	#if lvl_sizey>winlin:
-	#	sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=lvl_sizey, cols=wincol))
 	while lvl_sizex>wincol or lvl_sizey>winlin:
 		stdscr.clear()
 		winlin, wincol =  stdscr.getmaxyx()
@@ -455,22 +557,18 @@ def main_game():
 	while gracz.finish == False:
 		winlin, wincol =  stdscr.getmaxyx()
 		stdscr.addstr(winlin-2,0,'Monety:', curses.color_pair(6) )
-		stdscr.attron(curses.A_BOLD)
 		stdscr.addstr(winlin-2,9,str(gracz.coins)+'/'+str(gracz.coinsMAX), curses.color_pair(10) )
 
 		now_time=time.time()
 		now_time=int(now_time)
 		sec=now_time-start_time
 		minutes=sec/60
-		##stdscr.addstr(20,0,str(sec))
-		##stdscr.addstr(20,5,str(sec%60))
 		sec=sec%60
 		sec=str(sec)
 		minutes=str(minutes)
 		if len(sec)==1: sep='0'
 		else: sep=''
 		stdscr.addstr(winlin-2,16,'Czas:', curses.color_pair(6) )
-		stdscr.attron(curses.A_BOLD)
 		stdscr.addstr(winlin-2,24,minutes+':'+sep+sec, curses.color_pair(10) )
 		if (lvl_structure[gracz.y][gracz.x-1]=='Z' and lvl_structure[gracz.y][gracz.x-2] == 'C' and (lvl_structure[gracz.y-1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x-1] in gracz.solid) and  lvl_structure[gracz.y-1][gracz.x-2] in gracz.solid and lvl_structure[gracz.y+1][gracz.x-2] in gracz.solid and lvl_structure[gracz.y][gracz.x-3] in gracz.solid) or (lvl_structure[gracz.y][gracz.x+1]=='Z' and lvl_structure[gracz.y][gracz.x+2] == 'C' and (lvl_structure[gracz.y-1][gracz.x+1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x+1] in gracz.solid) and  lvl_structure[gracz.y-1][gracz.x+2] in gracz.solid and lvl_structure[gracz.y+1][gracz.x+2] in gracz.solid and lvl_structure[gracz.y][gracz.x+3] in gracz.solid) or (lvl_structure[gracz.y-1][gracz.x]=='Z' and lvl_structure[gracz.y-2][gracz.x] == 'C' and (lvl_structure[gracz.y-1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y-1][gracz.x+1] in gracz.solid) and  lvl_structure[gracz.y-2][gracz.x-1] in gracz.solid and lvl_structure[gracz.y-2][gracz.x+1] in gracz.solid and lvl_structure[gracz.y-3][gracz.x] in gracz.solid) or (lvl_structure[gracz.y+1][gracz.x]=='Z' and lvl_structure[gracz.y+2][gracz.x] == 'C' and (lvl_structure[gracz.y+1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x+1] in gracz.solid) and lvl_structure[gracz.y+2][gracz.x-1] in gracz.solid and lvl_structure[gracz.y+2][gracz.x+1] in gracz.solid and lvl_structure[gracz.y+3][gracz.x] in gracz.solid):
 			must_reset = True
@@ -488,7 +586,6 @@ def main_game():
 		signal.signal(signal.SIGALRM,update_monsters)
 		if signal.getitimer(signal.ITIMER_REAL)[0] == 0: signal.setitimer(signal.ITIMER_REAL,0.5)
 		key = stdscr.getch()
-		#signal.setitimer(signal.ITIMER_REAL,0)
 		if key == curses.KEY_UP or key == ord('w'):	gracz.goUP()
 		elif key == curses.KEY_DOWN or key == ord('s'): gracz.goDOWN()
 		elif key == curses.KEY_LEFT or key == ord('a'): gracz.goLEFT()
@@ -533,7 +630,6 @@ for level in levels:
 		start_time=int(start_time)
 
 		file_name = os.path.join(dirs_with_lvl[choose-1],level)
-		#lvlfile = open(file_name)
 		#Przypisanie kolorów
 		curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE) # ściana, drzwi, klucz
 		curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK) #gracz
@@ -545,5 +641,6 @@ for level in levels:
 		curses.init_pair(8, curses.COLOR_GREEN, curses.COLOR_WHITE) # zielony klucz i drzwi
 		curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_BLUE) # skrzynki
 		curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_BLACK) # kuflerz i kuptuż
-		curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK) # potwór
+		curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK) # potwór oraz napis "Słabo :(" na końcu gry
+		curses.init_pair(12, curses.COLOR_BLUE, curses.COLOR_BLACK) # napis "Pierwszy!!!" na końcu gry
 		main_game()
