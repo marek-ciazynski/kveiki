@@ -44,6 +44,30 @@ def close_curses():
 	if ss<10: sep='0'
 	else: sep = ''
 	print ' suma: '+str(sm)+':'+sep+str(ss)
+	
+	player_name = raw_input('\nTwój nick >\033[0;0;1m')
+	if player_name.strip() != '':
+		ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
+		rankfile = open(ranking_path, 'rw+')
+		value = []
+		print ranking_path
+		for i in xrange(1,len(rankfile.readlines())+1):
+			linia = linecache.getline(ranking_path,i)
+			linia = linia.strip('\n')
+			value.append( linia )
+		rank_sorted = []
+		if value != '':
+			for i in xrange(0,len(value)):
+				rank_sorted.append( linecache.getline(ranking_path,i) )
+		value.append(str(sm)+':'+sep+str(ss)+' '+player_name)
+		rank_sorted=sorted(value)
+		print rank_sorted
+		rankfile = open(ranking_path, 'w')
+		for item in rank_sorted:
+			rankfile.write(item+'\n')
+		#rankfile.writelines(rank_sorted)
+		rankfile.close()
+		print '\033[0;0;0m'
 
 
 class player:
