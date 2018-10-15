@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #-*- coding: utf-8 -*-
 import os,sys
 import linecache
@@ -5,13 +6,19 @@ import curses
 import time
 import atexit
 import signal
+import locale
 
-@atexit.register
-def atclose():
+#@atexit.register
+def close_curses():
+	curses.nocbreak()
+	stdscr.keypad(0)
+	curses.endwin()
+
+def end_game():
 	signal.signal(signal.SIGALRM,signal.SIG_IGN)
 	#Wyświetlenie rankingu i wpisanie się do niego
 	if not outranked:
-		winlin, wincol =  stdscr.getmaxyx()
+		winlin, wincol = stdscr.getmaxyx()
 		stdscr.clear()
 		stdscr.hline(0,0,' ', wincol,curses.A_REVERSE)
 		stdscr.hline(winlin-1,0,' ', wincol,curses.A_REVERSE)
@@ -61,7 +68,7 @@ def atclose():
 		printed_new = False
 		for i in value:
 			psep = ''
-			time.sleep(0.05)
+			time.sleep(0.1)
 			if not pos>=10: psep = ' '
 			if stdscr.getyx()[0] == winlin-3:
 				break
@@ -160,8 +167,78 @@ def atclose():
 			rankfile.write(item+'\n')
 		#rankfile.writelines(rank_sorted)
 		rankfile.close()
+		stdscr.attroff(curses.A_BOLD)
 
+#######{koniec wpisywania do rankingu i pokazanie czasu przechodzenia lvl'i}#################
+
+	winlin, wincol =  stdscr.getmaxyx()
+	for i in xrange(1,winlin-1):
+		stdscr.hline(i,0,' ',wincol)
+
+	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-14,'Czas przechodzenia poziomów:',curses.A_REVERSE)
+	stdscr.addstr(2,(wincol/2)-len(dirs_with_lvl[choose-1])/2,dirs_with_lvl[choose-1],curses.A_BOLD)
 	
+	ntimes = []
+	for i in times:
+		minuty,sekundy = i.split(':')
+		if len(minuty) == 1: mminuty='0'+minuty
+		if len(sekundy) == 1: sekundy='0'+sekundy
+		ntimes.append(minuty+':'+sekundy)
+	
+	shift=0
+	key = -1
+	while True:
+		step=1+shift
+		stdscr.addstr(0,0,'')
+		sep = '  '
+		for i in xrange(step,len(ntimes)+1):
+			if stdscr.getyx()[0] < winlin-4:
+				if i >=10: sep=' '
+				stdscr.addstr(i+3-step,int(wincol/2)-8,'Level '+str(i)+sep+'   '+ntimes[i-1])
+				stdscr.refresh()
+			else:
+				stdscr.addstr(winlin-3,(wincol/2)-1,'vvv')
+		if shift+(winlin-5) == len(ntimes)+1:
+			stdscr.addstr(winlin-3,(wincol/2)-1,'   ')
+		key = stdscr.getch()
+		if key == curses.KEY_UP and shift != 0: shift-=1
+		elif key == curses.KEY_DOWN and shift+(winlin-5) < len(ntimes)+1: shift+=1
+		else: break
+
+	curses.init_pair(1,curses.COLOR_BLACK,curses.COLOR_WHITE)
+	curses.init_pair(2,curses.COLOR_BLACK,curses.COLOR_BLUE)
+	stdscr.addstr((winlin/2)-3,(wincol/2)-9,'+------------------+', curses.color_pair(1))
+	stdscr.addstr((winlin/2)-2,(wincol/2)-9,'|    Powrót do     |', curses.color_pair(1))
+	stdscr.addstr((winlin/2)-1,(wincol/2)-9,'|  menu głównego?  |', curses.color_pair(1))
+	stdscr.addstr((winlin/2),  (wincol/2)-9,'|                  |', curses.color_pair(1))
+	stdscr.addstr((winlin/2)+1,(wincol/2)-9,'|                  |', curses.color_pair(1))
+	stdscr.addstr((winlin/2)+2,(wincol/2)-9,'+------------------+', curses.color_pair(1))
+	time.sleep(1)
+	stdscr.addstr((winlin/2)+1,(wincol/2)-6,' TAK ',curses.color_pair(2))
+	stdscr.addstr((winlin/2)+1,(wincol/2)+3,' NIE ',curses.color_pair(1))
+	
+	back_menu = True
+	while True:
+		key = stdscr.getch()
+		if key == curses.KEY_LEFT or key == curses.KEY_RIGHT:
+			if back_menu == True:
+				stdscr.addstr((winlin/2)+1,(wincol/2)-6,' TAK ',curses.color_pair(1))
+				stdscr.addstr((winlin/2)+1,(wincol/2)+3,' NIE ',curses.color_pair(2))
+				back_menu = False
+			else:
+				stdscr.addstr((winlin/2)+1,(wincol/2)-6,' TAK ',curses.color_pair(2))
+				stdscr.addstr((winlin/2)+1,(wincol/2)+3,' NIE ',curses.color_pair(1))
+				back_menu = True
+		else:
+			if back_menu:
+				main_menu()
+				break
+			else:
+				exit()
+
+########################################################################################	
+def atclose():
 	curses.nocbreak()
 	stdscr.keypad(0)
 	curses.endwin()
@@ -221,7 +298,7 @@ class player:
 					set_char_in_structure(self.y-2,self.x,lvl_structure[self.y-1][self.x])
 					set_char_in_structure(self.y-1,self.x,' ')
 					for i in xrange(1,4):
-						if lvl_structure[self.y-i][self.x] == ' ': stdscr.addstr(self.y+3-i,self.x,' ',curses.color_pair(1))
+						if   lvl_structure[self.y-i][self.x] == ' ': stdscr.addstr(self.y+3-i,self.x,' ',curses.color_pair(1))
 						elif lvl_structure[self.y-i][self.x] == 'C': stdscr.addstr(self.y+3-i,self.x,'$',curses.color_pair(4))
 						elif lvl_structure[self.y-i][self.x] == 'K': stdscr.addstr(self.y+3-i,self.x,'F',curses.color_pair(1))
 						elif lvl_structure[self.y-i][self.x] == 'r': stdscr.addstr(self.y+3-i,self.x,'F',curses.color_pair(7))
@@ -428,25 +505,8 @@ def set_char_in_structure(y,x,char):
 	lvl_structure[y][x] = char
 
 
-dirs_with_lvl = []
-for i in os.listdir('.'):
-	if os.path.isdir(i) == True:
-		isLvlSet = False
-		for j in os.listdir(os.path.join('.',i)):
-			if j.endswith('.lvl'):
-				isLvlSet = True
-		if isLvlSet:
-			dirs_with_lvl.append(i)
 
-print 'Wybierz zestaw'
-for i in dirs_with_lvl:
-	print ' '+str(dirs_with_lvl.index(i)+1)+'. '+str(i)
-choose = len(dirs_with_lvl)+1
-while choose > len(dirs_with_lvl) or choose == 0:
-	try:
-		choose=input('Numer zestawu: ')
-	except:
-		choose = 1
+locale.setlocale(locale.LC_ALL, '')
 
 #Init curses
 stdscr = curses.initscr()
@@ -455,6 +515,289 @@ curses.cbreak()
 stdscr.keypad(1)
 curses.start_color()
 curses.curs_set(0)
+
+def main_menu():
+	while True:
+		stdscr.clear()
+		winlin, wincol =  stdscr.getmaxyx()
+
+		stdscr.hline(winlin-1,0,' ', wincol,curses.A_REVERSE)
+		stdscr.addstr(winlin-1,1,'2013 CC-BY',curses.A_REVERSE)
+		stdscr.addstr(winlin-1,wincol-8,'ver 0.8',curses.A_REVERSE)
+		if winlin>15 and wincol>31:
+			for i in xrange(0,6):
+				stdscr.hline(i,0,' ', wincol,curses.A_REVERSE)
+				stdscr.refresh()
+				time.sleep(0.05)
+			stdscr.addstr(0,(wincol/2)-15,'#   #              #  #     #',curses.A_REVERSE)
+			stdscr.addstr(1,(wincol/2)-15,'#  #                  #      ',curses.A_REVERSE)
+			stdscr.addstr(2,(wincol/2)-15,'###    #  #   ##   #  #  #  #',curses.A_REVERSE)
+			stdscr.addstr(3,(wincol/2)-15,'###    #  #  ####  #  ###   #',curses.A_REVERSE)
+			stdscr.addstr(4,(wincol/2)-15,'#  #   #  #  #     #  #  #  #',curses.A_REVERSE)
+			stdscr.addstr(5,(wincol/2)-15,'#   #   ##    ###  #  #   # #',curses.A_REVERSE)
+			margin_top=7
+		else:
+			stdscr.hline(1,0,' ', wincol,curses.A_REVERSE)
+			stdscr.addstr(0,(wincol/2)-3,'Kveiki')
+			margin_top=2
+			
+		pos=1
+		stdscr.addstr(margin_top+1,(wincol/2)-9,'  Wybierz zestaw  ',curses.A_REVERSE)
+		stdscr.addstr(margin_top+2,(wincol/2)-9,'    Instrukcja    ',curses.A_NORMAL)
+		stdscr.addstr(margin_top+3,(wincol/2)-9,'     Ranking      ',curses.A_NORMAL)
+		stdscr.addstr(margin_top+4,(wincol/2)-9,'    O autorze     ',curses.A_NORMAL)
+		stdscr.addstr(margin_top+5,(wincol/2)-9,'     Wyjście      ',curses.A_NORMAL)
+		
+		while True:
+			key = stdscr.getch()
+			if key == curses.KEY_UP:
+				stdscr.chgat(pos+margin_top,(wincol/2)-9,curses.A_NORMAL)
+				if pos==1: pos=5
+				else: pos-=1
+				stdscr.chgat(pos+margin_top,(wincol/2)-9,18,curses.A_REVERSE)
+			elif key == curses.KEY_DOWN:
+				stdscr.chgat(pos+margin_top,(wincol/2)-9,curses.A_NORMAL)
+				if pos==5: pos=1
+				else: pos+=1
+				stdscr.chgat(pos+margin_top,(wincol/2)-9,18,curses.A_REVERSE)
+			elif key == 27:
+				exit()
+			else:
+				break 
+
+		if pos == 1:
+			global choose
+			choose = choose_levelset()
+			if choose != 0:
+				game()
+		elif pos == 2:
+			show_instruction()
+		elif pos == 3:
+			show_ranking()
+		elif pos == 4:
+			show_about_dev()
+		elif pos == 5:
+			exit()
+
+def choose_levelset():
+	global dirs_with_lvl
+	winlin, wincol =  stdscr.getmaxyx()
+	for i in xrange(7,winlin):
+		stdscr.hline(i-1,0,' ',wincol)
+	for i in xrange(5,-1,-1):
+		stdscr.hline(i,0,' ',wincol)
+		stdscr.refresh()
+		time.sleep(0.05)
+	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-7,'Wybierz zestaw:',curses.A_REVERSE)
+	
+	dirs_with_lvl = []
+	for i in os.listdir('.'):
+		if os.path.isdir(i) == True:
+			isLvlSet = False
+			for j in os.listdir(os.path.join('.',i)):
+				if j.endswith('.lvl'):
+					isLvlSet = True
+			if isLvlSet:
+				dirs_with_lvl.append(i)
+
+	style=curses.A_REVERSE
+	for i in dirs_with_lvl:
+		stdscr.addstr(2+dirs_with_lvl.index(i),(wincol/2)-(len(i)/2),i,style)
+		style=curses.A_NORMAL
+
+	pos=1
+	while True:
+		key = stdscr.getch()
+		if key == curses.KEY_UP:
+			stdscr.chgat(pos+1,(wincol/2)-(len(dirs_with_lvl[pos-1])/2),curses.A_NORMAL)
+			if pos==1: pos=len(dirs_with_lvl)
+			else: pos-=1
+			stdscr.chgat(pos+1,(wincol/2)-(len(dirs_with_lvl[pos-1])/2),len(dirs_with_lvl[pos-1]),curses.A_REVERSE)
+		elif key == curses.KEY_DOWN:
+			stdscr.chgat(pos+1,(wincol/2)-(len(dirs_with_lvl[pos-1])/2),curses.A_NORMAL)
+			if pos==len(dirs_with_lvl): pos=1
+			else: pos+=1
+			stdscr.chgat(pos+1,(wincol/2)-(len(dirs_with_lvl[pos-1])/2),len(dirs_with_lvl[pos-1]),curses.A_REVERSE)
+		elif key == 27:
+			return 0
+		else:
+			return pos
+	
+		
+def show_instruction():
+	winlin, wincol =  stdscr.getmaxyx()
+	for i in xrange(7,winlin):
+		stdscr.hline(i-1,0,' ',wincol)
+	for i in xrange(5,-1,-1):
+		stdscr.hline(i,0,' ',wincol)
+		stdscr.refresh()
+		time.sleep(0.05)
+	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-7,'Instrukcja gry',curses.A_REVERSE)
+	stdscr.addstr(3,1,'Zasady są proste. Musisz zebrać wszystkie monety i dotrzeć do mety.')
+	stdscr.addstr(4,1,'Poruszasz się strzałkami na klawiaturze albo przyciskami "wsad".')
+	stdscr.addstr(6,1,'Na swojej drodze możesz spotkać:')
+	stdscr.addstr(7,1,' - krwiożercze potwory, arrrr')
+	stdscr.addstr(8,1,' - róznokolorowe drzwi i klucze')
+	stdscr.addstr(9,1,' - ciężkie skrzynie')
+	
+	stdscr.addstr(11,1,'1. Tego pierwszego lepiej nie dotykać. :D')
+	stdscr.addstr(12,1,'2. Pamiętaj, że konkretny kolor klucza otwiera tylko drzwi o tym samym kolorze.')
+	stdscr.addstr(13,1,'3. Co do skrzyni to zwykle zawadzają i warto je poprzesuwać,')
+	stdscr.addstr(14,1,'   jednak łatwo jest nimi totalnie zatorować sobię drogę. ;)')
+	stdscr.addstr(15,1,'4. Jeśli co ci nie wyjdzie, zawsze możesz zresetować level wciskając "R".')
+	stdscr.addstr(17,(wincol/2)-16,'Więcej w kolejnych wersjach gry.')
+	stdscr.getch()
+
+def show_ranking():
+	choose = choose_levelset()
+	if choose != 0:
+		winlin, wincol =  stdscr.getmaxyx()
+		for i in xrange(7,winlin):
+			stdscr.hline(i-1,0,' ',wincol)
+		for i in xrange(5,-1,-1):
+			stdscr.hline(i,0,' ',wincol)
+			stdscr.refresh()
+			time.sleep(0.05)
+		stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
+		stdscr.addstr(0,(wincol/2)-3,'Ranking',curses.A_REVERSE)
+		
+		ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
+		if not os.path.exists(ranking_path):
+			rankfile = open(ranking_path, 'w+')
+			rankfile.close()
+		rankfile = open(ranking_path, 'rw')
+		lnick = []
+		ltime = []
+		for i in xrange(1,len(rankfile.readlines())+1):
+			linia = linecache.getline(ranking_path,i)
+			linia = linia.strip('\n')
+			try:
+				atime,anick = linia.split(' ')
+			except:
+				break
+			atime = atime[:atime.index('.')] #usunąć po zwiększeniu dokładności pomiaru czasu do 0.1 sek
+			ltime.append(atime)
+			lnick.append(anick)
+
+		stdscr.addstr(2,(wincol/2)-len(dirs_with_lvl[choose-1])/2,dirs_with_lvl[choose-1],curses.A_BOLD)
+		if len(lnick) > 0:
+			shift=0
+			key = -1
+			while True:
+				step=1+shift
+				stdscr.addstr(0,0,'')
+				sep = '  '
+				for i in xrange(step,len(lnick)+1):
+					if stdscr.getyx()[0] < winlin-4:
+						if i >=10: sep=' '
+						stdscr.addstr(i+3-step,int(wincol/2)-13,str(i)+'.'+sep+lnick[i-1]+((15-len(lnick[i-1]))+3)*' '+ltime[i-1])
+						stdscr.refresh()
+					else:
+						stdscr.addstr(winlin-3,(wincol/2)-1,'vvv')
+				if shift+(winlin-5) == len(lnick)+1:
+					stdscr.addstr(winlin-3,(wincol/2)-1,'   ')
+				key = stdscr.getch()
+				if key == curses.KEY_UP and shift != 0: shift-=1
+				elif key == curses.KEY_DOWN and shift+(winlin-5) < len(lnick)+1: shift+=1
+				elif key == 27 or key == 13: break
+		else:
+			stdscr.addstr(4,(wincol/2)-13,'<jeszcze nikogo tu nie ma>')
+			stdscr.refresh()
+			time.sleep(1)
+
+def show_about_dev():
+	winlin, wincol = stdscr.getmaxyx()
+	for i in xrange(7,winlin):
+		stdscr.hline(i-1,0,' ',wincol)
+	for i in xrange(5,-1,-1):
+		stdscr.hline(i,0,' ',wincol)
+		stdscr.refresh()
+		time.sleep(0.05)
+	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-8,'O autorze i grze',curses.A_REVERSE)
+	
+	stdscr.addstr(2,(wincol/2)-3,'Kveiki',curses.A_BOLD)
+	stdscr.addstr(3,(wincol/2)-5,'wersja: 0.8',curses.A_NORMAL)
+	
+	stdscr.addstr(5,(wincol/2)-11,'Wykorzystuje:',curses.A_NORMAL)
+	stdscr.addstr(5,(wincol/2)+3,'Python 2',curses.A_BOLD)
+	stdscr.addstr(6,(wincol/2)-11,'oraz bibliotekę Curses',curses.A_NORMAL)
+	
+	stdscr.addstr(8,(wincol/2)-2,'2013',curses.A_BOLD)
+	stdscr.addstr(9,(wincol/2)-7,'Marek Ciążyński',curses.A_BOLD)
+	
+	stdscr.addstr(11,(wincol/2)-20,'Na licencji Creative Commons (CC-BY 3.0)',curses.A_DIM)
+	stdscr.addstr(12,(wincol/2)-11,'www.creativecommons.org',curses.A_DIM+curses.A_UNDERLINE)
+	stdscr.getch()
+
+#print 'Wybierz zestaw'
+#for i in dirs_with_lvl:
+#	print ' '+str(dirs_with_lvl.index(i)+1)+'. '+str(i)
+#choose = len(dirs_with_lvl)+1
+#while choose > len(dirs_with_lvl) or choose == 0:
+#	try:
+#		choose=input('Numer zestawu: ')
+#	except:
+#		choose = 1
+
+
+
+def game():
+	global file_name
+	global level
+	global start_time
+	global times
+	global outranked
+	
+	winlin, wincol =  stdscr.getmaxyx()
+	curses.init_pair(1,curses.COLOR_GREEN,curses.COLOR_BLACK)
+	curses.init_pair(2,curses.COLOR_BLACK,curses.COLOR_WHITE)
+	if os.path.exists(os.path.join(dirs_with_lvl[choose-1],'describe')):
+		describe=open( os.path.join(dirs_with_lvl[choose-1],'describe')).read()
+		stdscr.clear()
+		stdscr.addstr(1,1,'\n'+describe,curses.color_pair(1))
+		stdscr.refresh()
+		stdscr.addstr(winlin-2,1,'\n<ENTER>', curses.color_pair(2) )
+		stdscr.getch()
+
+	if os.path.exists(os.path.join(dirs_with_lvl[choose-1],'queue')):
+		levels = open(os.path.join(dirs_with_lvl[choose-1],'queue'),'rU').readlines()
+		for i in levels:
+			levels[levels.index(i)] = levels[levels.index(i)].strip('\n')
+	else:
+		levels = sorted( os.listdir(dirs_with_lvl[choose-1]) )
+
+	times=[]
+	outranked = False
+	for level in levels:
+		if level.endswith('.lvl'):
+			try:
+				if sec+minutes!=0:
+					times.append(minutes+':'+sec)
+			except:
+				pass
+				
+			start_time=time.time()
+			start_time=int(start_time)
+
+			file_name = os.path.join(dirs_with_lvl[choose-1],level)
+			#Przypisanie kolorów
+			curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE) # ściana, drzwi, klucz
+			curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK) #gracz
+			curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_WHITE) # wyjście i niebieski klucz i drzwi
+			curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE) # moneta, żółty klucz i drzwi
+			curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK) # inf. o lvl
+			curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_YELLOW) # pasek na dole ekranu
+			curses.init_pair(7, curses.COLOR_RED, curses.COLOR_WHITE) # czerwony klucz i drzwi
+			curses.init_pair(8, curses.COLOR_GREEN, curses.COLOR_WHITE) # zielony klucz i drzwi
+			curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_BLUE) # skrzynki
+			curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_BLACK) # kuflerz i kuptuż
+			curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK) # potwór oraz napis "Słabo :(" na końcu gry
+			curses.init_pair(12, curses.COLOR_BLUE, curses.COLOR_BLACK) # napis "Pierwszy!!!" na końcu gry
+			main_game()
+	end_game()
 
 def main_game():
 	global sec
@@ -466,6 +809,7 @@ def main_game():
 	global Monsters
 	global gracz
 	global outranked
+	winlin, wincol =  stdscr.getmaxyx()
 	
 	#Wczytanie pliku level'u
 	lvl_structure=[]
@@ -601,52 +945,11 @@ def main_game():
 			break
 		elif key == ord('q'):
 			outranked = True
-			exit()
+			end_game()
+			break
 		#elif key == ord('f'): curses.flash()
 
 
-winlin, wincol =  stdscr.getmaxyx()
-curses.init_pair(1,curses.COLOR_GREEN,curses.COLOR_BLACK)
-curses.init_pair(2,curses.COLOR_BLACK,curses.COLOR_WHITE)
-if os.path.exists(os.path.join(dirs_with_lvl[choose-1],'discribe')):
-	discribe=open( os.path.join(dirs_with_lvl[choose-1],'discribe')).read()
-	stdscr.addstr(1,1,'\n'+discribe,curses.color_pair(1))
-	stdscr.refresh()
-	stdscr.addstr(winlin-2,1,'\n<ENTER>', curses.color_pair(2) )
-	stdscr.getch()
-
-if os.path.exists(os.path.join(dirs_with_lvl[choose-1],'queue')):
-	levels = open(os.path.join(dirs_with_lvl[choose-1],'queue'),'rU').readlines()
-	for i in levels:
-		levels[levels.index(i)] = levels[levels.index(i)].strip('\n')
-else:
-	levels = sorted( os.listdir(dirs_with_lvl[choose-1]) )
-
-times=[]
-outranked = False
-for level in levels:
-	if level.endswith('.lvl'):
-		try:
-			if sec+minutes!=0:
-				times.append(minutes+':'+sec)
-		except:
-			pass
-			
-		start_time=time.time()
-		start_time=int(start_time)
-
-		file_name = os.path.join(dirs_with_lvl[choose-1],level)
-		#Przypisanie kolorów
-		curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE) # ściana, drzwi, klucz
-		curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK) #gracz
-		curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_WHITE) # wyjście i niebieski klucz i drzwi
-		curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE) # moneta, żółty klucz i drzwi
-		curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK) # inf. o lvl
-		curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_YELLOW) # pasek na dole ekranu
-		curses.init_pair(7, curses.COLOR_RED, curses.COLOR_WHITE) # czerwony klucz i drzwi
-		curses.init_pair(8, curses.COLOR_GREEN, curses.COLOR_WHITE) # zielony klucz i drzwi
-		curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_BLUE) # skrzynki
-		curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_BLACK) # kuflerz i kuptuż
-		curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK) # potwór oraz napis "Słabo :(" na końcu gry
-		curses.init_pair(12, curses.COLOR_BLUE, curses.COLOR_BLACK) # napis "Pierwszy!!!" na końcu gry
-		main_game()
+# Główny kod programu :D
+os.putenv("ESCDELAY", "0")
+main_menu()
