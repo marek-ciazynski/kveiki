@@ -376,37 +376,37 @@ class monster:
 		
 	def update(self):
 		available=0
-		if lvl_structure[self.y-1][self.x] == '*':
+		if self.y>0 and len(lvl_structure[self.y-1])>self.x and lvl_structure[self.y-1][self.x] == '*':
 			available+=1
-		if lvl_structure[self.y][self.x+1] == '*':
+		if self.x+1<len(lvl_structure[self.y]) and len(lvl_structure[self.y])>self.x+1 and lvl_structure[self.y][self.x+1] == '*':
 			available+=1
-		if lvl_structure[self.y+1][self.x] == '*':
+		if self.y+1<len(lvl_structure) and len(lvl_structure[self.y+1])>self.x and lvl_structure[self.y+1][self.x] == '*':
 			available+=1
-		if lvl_structure[self.y][self.x-1] == '*':
+		if self.x > 0 and len(lvl_structure[self.y])>self.x-1 and lvl_structure[self.y][self.x-1] == '*':
 			available+=1
 
-		if (lvl_structure[self.y-1][self.x] == '*') and (self.last_go != 'DOWN' or available == 1):
+		if (self.y > 0 and len(lvl_structure[self.y-1])>self.x and lvl_structure[self.y-1][self.x] == '*') and (self.last_go != 'DOWN' or available == 1):
 			lvl_structure[self.y][self.x] = '*'
 			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
 			self.y-=1
 			lvl_structure[self.y][self.x] = 'm'
 			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
 			self.last_go = 'UP'
-		elif (lvl_structure[self.y][self.x+1] == '*') and (self.last_go != 'LEFT' or available == 1):
+		elif (self.x+1<len(lvl_structure[self.y]) and len(lvl_structure[self.y])>self.x+1 and  lvl_structure[self.y][self.x+1] == '*') and (self.last_go != 'LEFT' or available == 1):
 			lvl_structure[self.y][self.x] = '*'
 			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
 			self.x+=1
 			lvl_structure[self.y][self.x] = 'm'
 			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
 			self.last_go = 'RIGHT'
-		elif (lvl_structure[self.y+1][self.x] == '*') and (self.last_go != 'UP' or available == 1):
+		elif (self.y+1<len(lvl_structure) and len(lvl_structure[self.y+1])>self.x and lvl_structure[self.y+1][self.x] == '*') and (self.last_go != 'UP' or available == 1):
 			lvl_structure[self.y][self.x] = '*'
 			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
 			self.y+=1
 			lvl_structure[self.y][self.x] = 'm'
 			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
 			self.last_go = 'DOWN'
-		elif (lvl_structure[self.y][self.x-1] == '*') and (self.last_go != 'RIGHT' or available == 1):
+		elif (self.x> 0 and len(lvl_structure[self.y])>self.x-1 and lvl_structure[self.y][self.x-1] == '*') and (self.last_go != 'RIGHT' or available == 1):
 			lvl_structure[self.y][self.x] = '*'
 			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
 			self.x-=1
@@ -416,6 +416,7 @@ class monster:
 		stdscr.refresh()
 		
 		if (gracz.y,gracz.x) == (self.y,self.x):
+			curses.flash()
 			gracz.reset()
 
 
@@ -501,7 +502,10 @@ def main_game():
 	
 	stdscr.addstr(3,0,'')
 	Monsters = []
+	MonX = -1
+	MonY = 0
 	for char in open(file_name).read():
+		MonX += 1
 		if char == 'X':
 			stdscr.addstr( "#", curses.color_pair(1) )
 		elif char == ' ':
@@ -540,15 +544,17 @@ def main_game():
 			stdscr.addstr( "X", curses.color_pair(9) )
 		elif char == 'M':
 			stdscr.addstr( "@", curses.color_pair(11)+curses.A_BOLD )
-			for i in lvl_structure:
-				try:
-					monX=lvl_structure[lvl_structure.index(i)].index('M')
-					monY=lvl_structure.index(i)
-				except:
-					pass
-			lvl_structure[monY][monX] = 'm'
-			Monsters.append( monster(monY,monX) )
+			#for i in lvl_structure:
+			#	try:
+			#		monX=lvl_structure[lvl_structure.index(i)].index('M')
+			#		monY=lvl_structure.index(i)
+			#	except:
+			#		pass
+			lvl_structure[MonY][MonX] = 'm'
+			Monsters.append( monster(MonY,MonX) )
 		elif char == '\n':
+			MonY+=1
+			MonX = -1
 			stdscr.addstr( "\n", curses.color_pair(1) )
 			line+=1
 		stdscr.refresh()
