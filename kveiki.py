@@ -4,8 +4,9 @@ import linecache
 import curses
 import time
 import atexit
+import signal
 
-#@atexit.register
+@atexit.register
 def close_curses():
 	curses.nocbreak()
 	stdscr.keypad(0)
@@ -44,29 +45,32 @@ def close_curses():
 	else: sep = ''
 	print ' suma: '+str(sm)+':'+sep+str(ss)
 	
-	player_name = raw_input('\nTwój nick >\033[0;0;1m')
-	if player_name.strip() != '':
-		ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
-		rankfile = open(ranking_path, 'rw+')
-		value = []
-		print ranking_path
-		for i in xrange(1,len(rankfile.readlines())+1):
-			linia = linecache.getline(ranking_path,i)
-			linia = linia.strip('\n')
-			value.append( linia )
-		rank_sorted = []
-		if value != '':
-			for i in xrange(0,len(value)):
-				rank_sorted.append( linecache.getline(ranking_path,i) )
-		value.append(str(sm)+':'+sep+str(ss)+' '+player_name)
-		rank_sorted=sorted(value)
-		print rank_sorted
-		rankfile = open(ranking_path, 'w')
-		for item in rank_sorted:
-			rankfile.write(item+'\n')
-		#rankfile.writelines(rank_sorted)
-		rankfile.close()
-		print '\033[0;0;0m'
+	if outranked:
+		print "\nNie przeszedłeś całego level set'u."
+	else:
+		player_name = raw_input('\nTwój nick >\033[0;0;1m')
+		if player_name.strip() != '':
+			ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
+			rankfile = open(ranking_path, 'rw+')
+			value = []
+			print ranking_path
+			for i in xrange(1,len(rankfile.readlines())+1):
+				linia = linecache.getline(ranking_path,i)
+				linia = linia.strip('\n')
+				value.append( linia )
+			rank_sorted = []
+			if value != '':
+				for i in xrange(0,len(value)):
+					rank_sorted.append( linecache.getline(ranking_path,i) )
+			value.append(str(sm)+':'+sep+str(ss)+' '+player_name)
+			rank_sorted=sorted(value)
+			print rank_sorted
+			rankfile = open(ranking_path, 'w')
+			for item in rank_sorted:
+				rankfile.write(item+'\n')
+			#rankfile.writelines(rank_sorted)
+			rankfile.close()
+			print '\033[0;0;0m'
 
 
 
@@ -96,7 +100,12 @@ class player:
 			number=i.count('C')
 			self.coinsMAX+=number
 
-		#stdscr.addstr(0,0,str(self.x)+' '+str(self.y))
+	def reset(self):
+		stdscr.addstr(self.y+3,self.x,'@', curses.color_pair(11)+curses.A_BOLD )
+		self.__init__()
+		stdscr.addstr(self.y+3,self.x,'@', curses.color_pair(2)+curses.A_BOLD )
+		time.sleep(0.5)
+		stdscr.addstr(self.y+3,self.x,'@', curses.color_pair(2) )
 
 	def goUP(self):
 		if not lvl_structure[self.y-1][self.x] in self.solid:
@@ -207,7 +216,6 @@ class player:
 				self.x+=1
 				self.update()
 
-
 	def update(self):
 		find = ''
 		
@@ -218,6 +226,11 @@ class player:
 			stdscr.addstr(self.yL+3,self.xL,'^', curses.color_pair(3) )
 		stdscr.addstr(self.y+3,self.x,'@', curses.color_pair(2) )
 		stdscr.refresh()
+		
+		for i in Monsters:
+			if (self.y,self.x) == (i.y,i.x):
+				curses.flash()
+				self.reset()
 
 		if lvl_structure[self.y][self.x] == 'F':
 			if self.coins == self.coinsMAX:
@@ -248,6 +261,61 @@ class player:
 						stdscr.addstr(self.tmpy+3,self.tmpx,' ', curses.color_pair(1) )
 						stdscr.refresh()
 
+
+class monster:
+	def __init__(self,y,x):
+		self.x = x
+		self.y = y
+		self.last_go = ' '
+		
+	def update(self):
+		available=0
+		if lvl_structure[self.y-1][self.x] == '*':
+			available+=1
+		if lvl_structure[self.y][self.x+1] == '*':
+			available+=1
+		if lvl_structure[self.y+1][self.x] == '*':
+			available+=1
+		if lvl_structure[self.y][self.x-1] == '*':
+			available+=1
+
+		if (lvl_structure[self.y-1][self.x] == '*') and (self.last_go != 'DOWN' or available == 1):
+			lvl_structure[self.y][self.x] = '*'
+			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
+			self.y-=1
+			lvl_structure[self.y][self.x] = 'm'
+			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
+			self.last_go = 'UP'
+		elif (lvl_structure[self.y][self.x+1] == '*') and (self.last_go != 'LEFT' or available == 1):
+			lvl_structure[self.y][self.x] = '*'
+			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
+			self.x+=1
+			lvl_structure[self.y][self.x] = 'm'
+			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
+			self.last_go = 'RIGHT'
+		elif (lvl_structure[self.y+1][self.x] == '*') and (self.last_go != 'UP' or available == 1):
+			lvl_structure[self.y][self.x] = '*'
+			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
+			self.y+=1
+			lvl_structure[self.y][self.x] = 'm'
+			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
+			self.last_go = 'DOWN'
+		elif (lvl_structure[self.y][self.x-1] == '*') and (self.last_go != 'RIGHT' or available == 1):
+			lvl_structure[self.y][self.x] = '*'
+			stdscr.addstr(self.y+3,self.x,' ',curses.color_pair(1) )
+			self.x-=1
+			lvl_structure[self.y][self.x] = 'm'
+			stdscr.addstr(self.y+3,self.x,'@',curses.color_pair(11)+curses.A_BOLD )
+			self.last_go = 'LEFT'
+		stdscr.refresh()
+		
+		if (gracz.y,gracz.x) == (self.y,self.x):
+			gracz.reset()
+
+
+def update_monsters(a,b):
+	for monster in Monsters:
+		monster.update()
 
 def set_char_in_structure(y,x,char):
 	lvl_structure[y][x] = char
@@ -288,6 +356,9 @@ def main_game():
 	global wincol
 	global winlin
 	global start_time
+	global Monsters
+	global gracz
+	global outranked
 	
 	#Wczytanie pliku level'u
 	lvl_structure=[]
@@ -327,10 +398,13 @@ def main_game():
 	stdscr.addstr(0,0,'\nLevel'+' '+str(sorted(os.listdir(dirs_with_lvl[choose-1])).index(level)+1)+' ('+level+')\n\n', curses.color_pair(5))
 	
 	stdscr.addstr(3,0,'')
+	Monsters = []
 	for char in open(file_name).read():
 		if char == 'X':
 			stdscr.addstr( "#", curses.color_pair(1) )
 		elif char == ' ':
+			stdscr.addstr( " ", curses.color_pair(1) )
+		elif char == '*':
 			stdscr.addstr( " ", curses.color_pair(1) )
 		elif char == 's':
 			stdscr.addstr( " ", curses.color_pair(2) )
@@ -362,11 +436,22 @@ def main_game():
 			stdscr.addstr( "F", curses.color_pair(3) )
 		elif char == 'Z':
 			stdscr.addstr( "X", curses.color_pair(9) )
+		elif char == 'M':
+			stdscr.addstr( "@", curses.color_pair(11)+curses.A_BOLD )
+			for i in lvl_structure:
+				try:
+					monX=lvl_structure[lvl_structure.index(i)].index('M')
+					monY=lvl_structure.index(i)
+				except:
+					pass
+			lvl_structure[monY][monX] = 'm'
+			Monsters.append( monster(monY,monX) )
 		elif char == '\n':
 			stdscr.addstr( "\n", curses.color_pair(1) )
 			line+=1
 		stdscr.refresh()
 
+	must_reset = False
 	while gracz.finish == False:
 		winlin, wincol =  stdscr.getmaxyx()
 		stdscr.addstr(winlin-2,0,'Monety:', curses.color_pair(6) )
@@ -388,6 +473,8 @@ def main_game():
 		stdscr.attron(curses.A_BOLD)
 		stdscr.addstr(winlin-2,24,minutes+':'+sep+sec, curses.color_pair(10) )
 		if (lvl_structure[gracz.y][gracz.x-1]=='Z' and lvl_structure[gracz.y][gracz.x-2] == 'C' and (lvl_structure[gracz.y-1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x-1] in gracz.solid) and  lvl_structure[gracz.y-1][gracz.x-2] in gracz.solid and lvl_structure[gracz.y+1][gracz.x-2] in gracz.solid and lvl_structure[gracz.y][gracz.x-3] in gracz.solid) or (lvl_structure[gracz.y][gracz.x+1]=='Z' and lvl_structure[gracz.y][gracz.x+2] == 'C' and (lvl_structure[gracz.y-1][gracz.x+1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x+1] in gracz.solid) and  lvl_structure[gracz.y-1][gracz.x+2] in gracz.solid and lvl_structure[gracz.y+1][gracz.x+2] in gracz.solid and lvl_structure[gracz.y][gracz.x+3] in gracz.solid) or (lvl_structure[gracz.y-1][gracz.x]=='Z' and lvl_structure[gracz.y-2][gracz.x] == 'C' and (lvl_structure[gracz.y-1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y-1][gracz.x+1] in gracz.solid) and  lvl_structure[gracz.y-2][gracz.x-1] in gracz.solid and lvl_structure[gracz.y-2][gracz.x+1] in gracz.solid and lvl_structure[gracz.y-3][gracz.x] in gracz.solid) or (lvl_structure[gracz.y+1][gracz.x]=='Z' and lvl_structure[gracz.y+2][gracz.x] == 'C' and (lvl_structure[gracz.y+1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x+1] in gracz.solid) and lvl_structure[gracz.y+2][gracz.x-1] in gracz.solid and lvl_structure[gracz.y+2][gracz.x+1] in gracz.solid and lvl_structure[gracz.y+3][gracz.x] in gracz.solid):
+			must_reset = True
+		if must_reset:	
 			stdscr.addstr(winlin-2,39,'R - restart',curses.A_BLINK+curses.A_BOLD)
 		else:
 			stdscr.addstr(winlin-2,39,'R - restart',curses.A_NORMAL+curses.A_BOLD)
@@ -398,7 +485,10 @@ def main_game():
 			stdscr.addstr(winlin-4,i,' ')
 			stdscr.addstr(winlin-5,i,' ')
 
+		signal.signal(signal.SIGALRM,update_monsters)
+		if signal.getitimer(signal.ITIMER_REAL)[0] == 0: signal.setitimer(signal.ITIMER_REAL,0.5)
 		key = stdscr.getch()
+		#signal.setitimer(signal.ITIMER_REAL,0)
 		if key == curses.KEY_UP or key == ord('w'):	gracz.goUP()
 		elif key == curses.KEY_DOWN or key == ord('s'): gracz.goDOWN()
 		elif key == curses.KEY_LEFT or key == ord('a'): gracz.goLEFT()
@@ -406,7 +496,9 @@ def main_game():
 		elif key == ord('r'):
 			main_game()
 			break
-		elif key == ord('q'): exit()
+		elif key == ord('q'):
+			outranked = True
+			exit()
 		#elif key == ord('f'): curses.flash()
 
 
@@ -428,6 +520,7 @@ else:
 	levels = sorted( os.listdir(dirs_with_lvl[choose-1]) )
 
 times=[]
+outranked = False
 for level in levels:
 	if level.endswith('.lvl'):
 		try:
@@ -452,4 +545,5 @@ for level in levels:
 		curses.init_pair(8, curses.COLOR_GREEN, curses.COLOR_WHITE) # zielony klucz i drzwi
 		curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_BLUE) # skrzynki
 		curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_BLACK) # kuflerz i kuptuż
+		curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK) # potwór
 		main_game()
