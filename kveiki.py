@@ -1,11 +1,11 @@
 #-*- coding: utf-8 -*-
-import os,sys
+import os
 import linecache
 import curses
 import time
 import atexit
 
-@atexit.register
+#@atexit.register
 def close_curses():
 	curses.nocbreak()
 	stdscr.keypad(0)
@@ -88,6 +88,9 @@ class player:
 				self.yL=self.y
 			except:
 				pass
+
+		self.startx = self.x
+		self.starty = self.y
 
 		for i in lvl_structure:
 			number=i.count('C')
@@ -218,7 +221,7 @@ class player:
 
 		if lvl_structure[self.y][self.x] == 'F':
 			if self.coins == self.coinsMAX:
-#				stdscr.addstr(0,0,'Done')
+				stdscr.addstr(0,0,'Done')
 				stdscr.refresh()
 				self.finish = True
 			else:
@@ -251,32 +254,24 @@ def set_char_in_structure(y,x,char):
 
 
 dirs_with_lvl = []
-if len(sys.argv) == 2:
-	lvl_set = sys.argv[1]
-else:
-	for i in os.listdir('.'):
-		if os.path.isdir(i) == True:
-			isLvlSet = False
-			for j in os.listdir(os.path.join('.',i)):
-				if j.endswith('.lvl'):
-					isLvlSet = True
-			if isLvlSet:
-				dirs_with_lvl.append(i)
+for i in os.listdir('.'):
+	if os.path.isdir(i) == True:
+		isLvlSet = False
+		for j in os.listdir(os.path.join('.',i)):
+			if j.endswith('.lvl'):
+				isLvlSet = True
+		if isLvlSet:
+			dirs_with_lvl.append(i)
 
-if len(dirs_with_lvl) == 0 and len(sys.argv) != 2:
-	print "Nie znaleziono żadnych zestawów z level'ami."
-	print "Nie podałeś ścieżki do zestawu. kończę..."
-	exit()
-if len(sys.argv) != 2:
-	print 'Wybierz zestaw'
-	for i in dirs_with_lvl:
-		print ' '+str(dirs_with_lvl.index(i)+1)+'. '+str(i)
-	choose = len(dirs_with_lvl)+1
-	while choose > len(dirs_with_lvl) or choose == 0:
-		try:
-			choose=input('Numer zestawu: ')
-		except:
-			choose = 1
+print 'Wybierz zestaw'
+for i in dirs_with_lvl:
+	print ' '+str(dirs_with_lvl.index(i)+1)+'. '+str(i)
+choose = len(dirs_with_lvl)+1
+while choose > len(dirs_with_lvl) or choose == 0:
+	try:
+		choose=input('Numer zestawu: ')
+	except:
+		choose = 1
 
 #Init curses
 stdscr = curses.initscr()
@@ -290,6 +285,10 @@ def main_game():
 	global sec
 	global minutes
 	global lvl_structure
+	global wincol
+	global winlin
+	global start_time
+	
 	#Wczytanie pliku level'u
 	lvl_structure=[]
 	tmp = []
@@ -299,7 +298,33 @@ def main_game():
 			if char != '\n':
 				tmp.append(char)
 		lvl_structure.append(tmp)
+	
 	gracz = player()
+	#Sprawdzanie czy level nie wystaje poza okno terminala
+	lvl_sizey=len(lvl_structure)+10
+	a=0
+	lvl_sizex=0
+	for i in xrange(0,len(lvl_structure)):
+		a=len(lvl_structure[i])
+		if a>lvl_sizex: lvl_sizex=a
+	if lvl_sizex<50: lvl_sizex=50
+
+	#if lvl_sizex>wincol:
+	#	sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=winlin, cols=lvl_sizex))
+	#if lvl_sizey>winlin:
+	#	sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=lvl_sizey, cols=wincol))
+	while lvl_sizex>wincol or lvl_sizey>winlin:
+		stdscr.clear()
+		winlin, wincol =  stdscr.getmaxyx()
+		xx=(wincol/2)
+		yy=winlin/2
+		stdscr.addstr(yy-1,xx-7,'Powieksz okno,',curses.A_BOLD)
+		stdscr.addstr(yy,xx-9,'aby rozpoczac gre!',curses.A_BOLD)
+		stdscr.refresh()
+
+	#Rysowanie poziomu
+	stdscr.clear()
+	stdscr.addstr(0,0,'\nLevel'+' '+str(sorted(os.listdir(dirs_with_lvl[choose-1])).index(level)+1)+' ('+level+')\n\n', curses.color_pair(5))
 	
 	stdscr.addstr(3,0,'')
 	for char in open(file_name).read():
@@ -346,7 +371,7 @@ def main_game():
 		winlin, wincol =  stdscr.getmaxyx()
 		stdscr.addstr(winlin-2,0,'Monety:', curses.color_pair(6) )
 		stdscr.attron(curses.A_BOLD)
-		stdscr.addstr(winlin-2,9,str(gracz.coins)+'/'+str(gracz.coinsMAX)+' ', curses.color_pair(10) )
+		stdscr.addstr(winlin-2,9,str(gracz.coins)+'/'+str(gracz.coinsMAX), curses.color_pair(10) )
 
 		now_time=time.time()
 		now_time=int(now_time)
@@ -366,8 +391,7 @@ def main_game():
 			stdscr.addstr(winlin-2,39,'R - restart',curses.A_BLINK+curses.A_BOLD)
 		else:
 			stdscr.addstr(winlin-2,39,'R - restart',curses.A_NORMAL+curses.A_BOLD)
-		
-		stdscr.refresh()
+
 		for i in xrange(0,wincol-1):
 			stdscr.addstr(winlin-1,i,' ')
 			stdscr.addstr(winlin-3,i,' ')
@@ -383,6 +407,7 @@ def main_game():
 			main_game()
 			break
 		elif key == ord('q'): exit()
+		#elif key == ord('f'): curses.flash()
 
 
 winlin, wincol =  stdscr.getmaxyx()
@@ -395,21 +420,24 @@ if os.path.exists(os.path.join(dirs_with_lvl[choose-1],'discribe')):
 	stdscr.addstr(winlin-2,1,'\n<ENTER>', curses.color_pair(2) )
 	stdscr.getch()
 
-chosen_directory = os.listdir(dirs_with_lvl[choose-1])
+if os.path.exists(os.path.join(dirs_with_lvl[choose-1],'queue')):
+	levels = open(os.path.join(dirs_with_lvl[choose-1],'queue'),'rU').readlines()
+	for i in levels:
+		levels[levels.index(i)] = levels[levels.index(i)].strip('\n')
+else:
+	levels = sorted( os.listdir(dirs_with_lvl[choose-1]) )
+
 times=[]
-for level in sorted(chosen_directory):
+for level in levels:
 	if level.endswith('.lvl'):
 		try:
 			if sec+minutes!=0:
 				times.append(minutes+':'+sec)
 		except:
 			pass
-
+			
 		start_time=time.time()
 		start_time=int(start_time)
-
-		stdscr.clear()
-		stdscr.addstr(0,0,'\nLevel'+' '+str(sorted(os.listdir(dirs_with_lvl[choose-1])).index(level)+1)+' ('+level+')\n\n', curses.color_pair(5))
 
 		file_name = os.path.join(dirs_with_lvl[choose-1],level)
 		#lvlfile = open(file_name)
@@ -425,4 +453,3 @@ for level in sorted(chosen_directory):
 		curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_BLUE) # skrzynki
 		curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_BLACK) # kuflerz i kuptuż
 		main_game()
-		
