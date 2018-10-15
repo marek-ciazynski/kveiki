@@ -69,45 +69,63 @@ class player:
 		#stdscr.addstr(0,0,str(self.x)+' '+str(self.y))
 
 	def goUP(self):
-		if lvl_structure[self.y-1][self.x] != 'X':		# or lvl_structure[self.y-1][self.x] != 'D':
+		if lvl_structure[self.y-1][self.x] != 'X':
 			if lvl_structure[self.y-1][self.x] != 'D':
-				self.xL = self.x
-				self.yL = self.y
+				if lvl_structure[self.y-1][self.x] != 'R':
+					if lvl_structure[self.y-1][self.x] != 'G':
+						if lvl_structure[self.y-1][self.x] != 'B':
+							if lvl_structure[self.y-1][self.x] != 'Y':
+								self.xL = self.x
+								self.yL = self.y
 
-				self.y-=1
-				self.update()
+								self.y-=1
+								self.update()
 
 	def goDOWN(self):
 		#print lvl_structure[self.y+1][self.x] != 'X'
 		if lvl_structure[self.y+1][self.x] != 'X':
 			if lvl_structure[self.y+1][self.x] != 'D':
-				self.xL = self.x
-				self.yL = self.y
+				if lvl_structure[self.y+1][self.x] != 'R':
+					if lvl_structure[self.y+1][self.x] != 'G':
+						if lvl_structure[self.y+1][self.x] != 'B':
+							if lvl_structure[self.y+1][self.x] != 'Y':
+								self.xL = self.x
+								self.yL = self.y
 
-				self.y+=1
-				self.update()
+								self.y+=1
+								self.update()
 
 	def goLEFT(self):
 		if lvl_structure[self.y][self.x-1] != 'X':
 			if lvl_structure[self.y][self.x-1] != 'D':
-				self.xL = self.x
-				self.yL = self.y
+				if lvl_structure[self.y][self.x-1] != 'R':
+					if lvl_structure[self.y][self.x-1] != 'G':
+						if lvl_structure[self.y][self.x-1] != 'B':
+							if lvl_structure[self.y][self.x-1] != 'Y':
+								self.xL = self.x
+								self.yL = self.y
 
-				self.x-=1
-				self.update()
+								self.x-=1
+								self.update()
 
 
 	def goRIGHT(self):
 		if lvl_structure[self.y][self.x+1] != 'X':
 			if lvl_structure[self.y][self.x+1] != 'D':
-				self.xL = self.x
-				self.yL = self.y
+				if lvl_structure[self.y][self.x+1] != 'R':
+					if lvl_structure[self.y][self.x+1] != 'G':
+						if lvl_structure[self.y][self.x+1] != 'B':
+							if lvl_structure[self.y][self.x+1] != 'Y':
+								self.xL = self.x
+								self.yL = self.y
 
-				self.x+=1
-				self.update()
+								self.x+=1
+								self.update()
 
 
 	def update(self):
+		find = ''
+		
 		if self.restoreF == False:
 			stdscr.addstr(self.yL+3,self.xL,' ', curses.color_pair(1) )
 		else:
@@ -128,13 +146,18 @@ class player:
 			clear_char_in_structure(self.y,self.x)
 			self.coins += 1
 
-		if lvl_structure[self.y][self.x] == 'K':
+		if lvl_structure[self.y][self.x] == 'K': find ='D'
+		elif lvl_structure[self.y][self.x] == 'r': find ='R'
+		elif lvl_structure[self.y][self.x] == 'g': find ='G'
+		elif lvl_structure[self.y][self.x] == 'b': find ='B'
+		elif lvl_structure[self.y][self.x] == 'y': find ='Y'
+		if find != '':
 			self.tmpx = 0
 			self.tmpy = 0
 			for i in lvl_structure:
 				for j in i:
-					if j == 'D':
-						self.tmpx=i.index('D')
+					if j == find:
+						self.tmpx=i.index(find)
 						self.tmpy=lvl_structure.index(i)
 						clear_char_in_structure(self.tmpy,self.tmpx)
 						stdscr.addstr(self.tmpy+3,self.tmpx,' ', curses.color_pair(1) )
@@ -213,12 +236,14 @@ for level in sorted(chosen_directory):
 		file_name = os.path.join(dirs_with_lvl[choose-1],level)
 		lvlfile = open(file_name)
 		#Przypisanie kolorów
-		curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE) # ściana, drzwi
+		curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE) # ściana, drzwi, klucz
 		curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK) #gracz
-		curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_WHITE) # wyjście
-		curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE) # klucz, moneta
+		curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_WHITE) # wyjście i niebieski klucz i drzwi
+		curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE) # moneta, żółty klucz i drzwi
 		curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK) # inf. o lvl
 		curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_YELLOW) # pasek na dole ekranu
+		curses.init_pair(7, curses.COLOR_RED, curses.COLOR_WHITE) # czerwony klucz i drzwi
+		curses.init_pair(8, curses.COLOR_GREEN, curses.COLOR_WHITE) # zielony klucz i drzwi
 		#Wczytanie pliku level'u
 		lvl_structure=[]
 		tmp = []
@@ -245,7 +270,23 @@ for level in sorted(chosen_directory):
 			elif char == 'D':
 				stdscr.addstr( "=", curses.color_pair(1) )
 			elif char == 'K':
+				stdscr.addstr( "F", curses.color_pair(1) )
+			elif char == 'G':
+				stdscr.addstr( "=", curses.color_pair(8) )
+			elif char == 'g':
+				stdscr.addstr( "F", curses.color_pair(8) )
+			elif char == 'R':
+				stdscr.addstr( "=", curses.color_pair(7) )
+			elif char == 'r':
+				stdscr.addstr( "F", curses.color_pair(7) )
+			elif char == 'Y':
+				stdscr.addstr( "=", curses.color_pair(4) )
+			elif char == 'y':
 				stdscr.addstr( "F", curses.color_pair(4) )
+			elif char == 'B':
+				stdscr.addstr( "=", curses.color_pair(3) )
+			elif char == 'b':
+				stdscr.addstr( "F", curses.color_pair(3) )
 			elif char == '\n':
 				stdscr.addstr( "\n", curses.color_pair(1) )
 				line+=1
