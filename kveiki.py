@@ -8,7 +8,7 @@ import atexit
 import signal
 import locale
 
-#@atexit.register
+@atexit.register
 def close_curses():
 	curses.nocbreak()
 	stdscr.keypad(0)
@@ -43,14 +43,14 @@ def end_game():
 		s=round(s,1)
 		if s<10: sep='0'
 		else: sep = ''
-		stdscr.addstr(winlin-1,1,'Czas',curses.color_pair(1)+curses.A_BOLD)
-		stdscr.addstr(winlin-1,wincol-16,'Srednia: '+str(m)+':'+sep+str(s),curses.A_REVERSE)
+		stdscr.addstr(winlin-1,1,'Time',curses.color_pair(1)+curses.A_BOLD)
+		stdscr.addstr(winlin-1,wincol-16,'Average: '+str(m)+':'+sep+str(s),curses.A_REVERSE)
 		sm=ss/60
 		ss=ss%60
 		sm=int(sm)
 		if ss<10: sep='0'
 		else: sep = ''
-		stdscr.addstr(winlin-1,wincol-30,'Suma: '+str(sm)+':'+sep+str(ss),curses.A_REVERSE)
+		stdscr.addstr(winlin-1,wincol-30,'Sum: '+str(sm)+':'+sep+str(ss),curses.A_REVERSE)
 		
 		ranking_path = os.path.join(dirs_with_lvl[choose-1], 'ranking')
 		if not os.path.exists(ranking_path):
@@ -135,11 +135,11 @@ def end_game():
 		stdscr.addstr(inputY,inputX+len(player_name),whchs*' ')
 		stdscr.hline(0,0,' ',wincol)
 		if your_pos == 1:
-			stdscr.addstr(0,(wincol/2)-5,'Pierwszy!!!',curses.color_pair(12)+curses.A_BOLD)
+			stdscr.addstr(0,(wincol/2)-4,'First!!!',curses.color_pair(12)+curses.A_BOLD)
 		elif your_pos == -1:
-			stdscr.addstr(0,(wincol/2)-4,'Slabo :(',curses.color_pair(11)+curses.A_BOLD)
+			stdscr.addstr(0,(wincol/2)-4,'Looser :(',curses.color_pair(11)+curses.A_BOLD)
 		else:
-			stdscr.addstr(0,(wincol/2)-5,'Gratulacje!',curses.color_pair(2)+curses.A_BOLD)
+			stdscr.addstr(0,(wincol/2)-2,'Nice!',curses.color_pair(2)+curses.A_BOLD)
 		stdscr.refresh()
 		time.sleep(1.5)
 		#Zapisywanie pliku rankingu
@@ -176,7 +176,7 @@ def end_game():
 		stdscr.hline(i,0,' ',wincol)
 
 	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
-	stdscr.addstr(0,(wincol/2)-14,'Czas przechodzenia poziomów:',curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-5,'Total time:',curses.A_REVERSE)
 	stdscr.addstr(2,(wincol/2)-len(dirs_with_lvl[choose-1])/2,dirs_with_lvl[choose-1],curses.A_BOLD)
 	
 	ntimes = []
@@ -209,26 +209,26 @@ def end_game():
 	curses.init_pair(1,curses.COLOR_BLACK,curses.COLOR_WHITE)
 	curses.init_pair(2,curses.COLOR_BLACK,curses.COLOR_BLUE)
 	stdscr.addstr((winlin/2)-3,(wincol/2)-9,'+------------------+', curses.color_pair(1))
-	stdscr.addstr((winlin/2)-2,(wincol/2)-9,'|    Powrót do     |', curses.color_pair(1))
-	stdscr.addstr((winlin/2)-1,(wincol/2)-9,'|  menu głównego?  |', curses.color_pair(1))
+	stdscr.addstr((winlin/2)-2,(wincol/2)-9,'|    Return to     |', curses.color_pair(1))
+	stdscr.addstr((winlin/2)-1,(wincol/2)-9,'|    main menu?    |', curses.color_pair(1))
 	stdscr.addstr((winlin/2),  (wincol/2)-9,'|                  |', curses.color_pair(1))
 	stdscr.addstr((winlin/2)+1,(wincol/2)-9,'|                  |', curses.color_pair(1))
 	stdscr.addstr((winlin/2)+2,(wincol/2)-9,'+------------------+', curses.color_pair(1))
 	time.sleep(1)
-	stdscr.addstr((winlin/2)+1,(wincol/2)-6,' TAK ',curses.color_pair(2))
-	stdscr.addstr((winlin/2)+1,(wincol/2)+3,' NIE ',curses.color_pair(1))
+	stdscr.addstr((winlin/2)+1,(wincol/2)-6,' YES ',curses.color_pair(2))
+	stdscr.addstr((winlin/2)+1,(wincol/2)+3,'  NO ',curses.color_pair(1))
 	
 	back_menu = True
 	while True:
 		key = stdscr.getch()
 		if key == curses.KEY_LEFT or key == curses.KEY_RIGHT:
 			if back_menu == True:
-				stdscr.addstr((winlin/2)+1,(wincol/2)-6,' TAK ',curses.color_pair(1))
-				stdscr.addstr((winlin/2)+1,(wincol/2)+3,' NIE ',curses.color_pair(2))
+				stdscr.addstr((winlin/2)+1,(wincol/2)-6,' YES ',curses.color_pair(1))
+				stdscr.addstr((winlin/2)+1,(wincol/2)+3,'  NO ',curses.color_pair(2))
 				back_menu = False
 			else:
-				stdscr.addstr((winlin/2)+1,(wincol/2)-6,' TAK ',curses.color_pair(2))
-				stdscr.addstr((winlin/2)+1,(wincol/2)+3,' NIE ',curses.color_pair(1))
+				stdscr.addstr((winlin/2)+1,(wincol/2)-6,' YES ',curses.color_pair(2))
+				stdscr.addstr((winlin/2)+1,(wincol/2)+3,'  NO ',curses.color_pair(1))
 				back_menu = True
 		else:
 			if back_menu:
@@ -242,18 +242,18 @@ def atclose():
 	curses.nocbreak()
 	stdscr.keypad(0)
 	curses.endwin()
-	print '\nDziękuję za granie w Kveiki!'
+	print '\nThank\'s for playing Kveiki!'
 	print '------------------------------'
 	if not outranked:
-		print 'Czas przechodzenia poszczególnych poziomów:'
+		print 'Total time:'
 		no=1
 		for i in times:
 			print str(no)+': '+i
 			no+=1
-		print ' średnia: '+str(m)+':'+sep+str(s)
-		print ' suma: '+str(sm)+':'+sep+str(ss)
+		print ' average: '+str(m)+':'+sep+str(s)
+		print '     sum: '+str(sm)+':'+sep+str(ss)
 	else:
-		print "\nNie przeszedłeś całego level set'u."
+		print "\nYou didn't finish whole level set."
 	print '\033[0;0;0m'
 
 
@@ -522,7 +522,7 @@ def main_menu():
 		winlin, wincol =  stdscr.getmaxyx()
 
 		stdscr.hline(winlin-1,0,' ', wincol,curses.A_REVERSE)
-		stdscr.addstr(winlin-1,1,'2013 CC-BY',curses.A_REVERSE)
+		stdscr.addstr(winlin-1,1,'2013',curses.A_REVERSE)
 		stdscr.addstr(winlin-1,wincol-8,'ver 0.8',curses.A_REVERSE)
 		if winlin>15 and wincol>31:
 			for i in xrange(0,6):
@@ -542,11 +542,11 @@ def main_menu():
 			margin_top=2
 			
 		pos=1
-		stdscr.addstr(margin_top+1,(wincol/2)-9,'  Wybierz zestaw  ',curses.A_REVERSE)
-		stdscr.addstr(margin_top+2,(wincol/2)-9,'    Instrukcja    ',curses.A_NORMAL)
+		stdscr.addstr(margin_top+1,(wincol/2)-9,' Choose level set ',curses.A_REVERSE)
+		stdscr.addstr(margin_top+2,(wincol/2)-9,'      Rules       ',curses.A_NORMAL)
 		stdscr.addstr(margin_top+3,(wincol/2)-9,'     Ranking      ',curses.A_NORMAL)
-		stdscr.addstr(margin_top+4,(wincol/2)-9,'    O autorze     ',curses.A_NORMAL)
-		stdscr.addstr(margin_top+5,(wincol/2)-9,'     Wyjście      ',curses.A_NORMAL)
+		stdscr.addstr(margin_top+4,(wincol/2)-9,'      About       ',curses.A_NORMAL)
+		stdscr.addstr(margin_top+5,(wincol/2)-9,'      Quit        ',curses.A_NORMAL)
 		
 		while True:
 			key = stdscr.getch()
@@ -589,7 +589,7 @@ def choose_levelset():
 		stdscr.refresh()
 		time.sleep(0.05)
 	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
-	stdscr.addstr(0,(wincol/2)-7,'Wybierz zestaw:',curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-7,'Choose level set:',curses.A_REVERSE)
 	
 	dirs_with_lvl = []
 	for i in os.listdir('.'):
@@ -634,20 +634,19 @@ def show_instruction():
 		stdscr.refresh()
 		time.sleep(0.05)
 	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
-	stdscr.addstr(0,(wincol/2)-7,'Instrukcja gry',curses.A_REVERSE)
-	stdscr.addstr(3,1,'Zasady są proste. Musisz zebrać wszystkie monety i dotrzeć do mety.')
-	stdscr.addstr(4,1,'Poruszasz się strzałkami na klawiaturze albo przyciskami "wsad".')
-	stdscr.addstr(6,1,'Na swojej drodze możesz spotkać:')
-	stdscr.addstr(7,1,' - krwiożercze potwory, arrrr')
-	stdscr.addstr(8,1,' - róznokolorowe drzwi i klucze')
-	stdscr.addstr(9,1,' - ciężkie skrzynie')
+	stdscr.addstr(0,(wincol/2)-7,'Game rules',curses.A_REVERSE)
+	stdscr.addstr(3,1,'It\'svery easy. Just collect all coins and go to the finish.')
+	stdscr.addstr(4,1,'Move with keyboard arrows or "wsad" keys.')
+	stdscr.addstr(6,1,'You will find obstacles like:')
+	stdscr.addstr(7,1,' - monsters')
+	stdscr.addstr(8,1,' - colorful keys and doors')
+	stdscr.addstr(9,1,' - havy boxes')
 	
-	stdscr.addstr(11,1,'1. Tego pierwszego lepiej nie dotykać. :D')
-	stdscr.addstr(12,1,'2. Pamiętaj, że konkretny kolor klucza otwiera tylko drzwi o tym samym kolorze.')
-	stdscr.addstr(13,1,'3. Co do skrzyni to zwykle zawadzają i warto je poprzesuwać,')
-	stdscr.addstr(14,1,'   jednak łatwo jest nimi totalnie zatorować sobię drogę. ;)')
-	stdscr.addstr(15,1,'4. Jeśli co ci nie wyjdzie, zawsze możesz zresetować level wciskając "R".')
-	stdscr.addstr(17,(wincol/2)-16,'Więcej w kolejnych wersjach gry.')
+	stdscr.addstr(11,1,'1. Don\'t touch the first one')
+	stdscr.addstr(12,1,'2. Match key\'s color with door\'s one')
+	stdscr.addstr(13,1,'3. Try moving boxes around but remember that,')
+	stdscr.addstr(14,1,'   you can block yourself quite easily.')
+	stdscr.addstr(15,1,'4. Just press "R" to restart level if you get stuck.')
 	stdscr.getch()
 
 def show_ranking():
@@ -703,7 +702,7 @@ def show_ranking():
 				elif key == curses.KEY_DOWN and shift+(winlin-5) < len(lnick)+1: shift+=1
 				elif key == 27 or key == 13: break
 		else:
-			stdscr.addstr(4,(wincol/2)-13,'<jeszcze nikogo tu nie ma>')
+			stdscr.addstr(4,(wincol/2)-7,"<nobody's here>")
 			stdscr.refresh()
 			time.sleep(1)
 
@@ -716,31 +715,18 @@ def show_about_dev():
 		stdscr.refresh()
 		time.sleep(0.05)
 	stdscr.hline(0,0,' ',wincol,curses.A_REVERSE)
-	stdscr.addstr(0,(wincol/2)-8,'O autorze i grze',curses.A_REVERSE)
+	stdscr.addstr(0,(wincol/2)-8,'About game and author',curses.A_REVERSE)
 	
 	stdscr.addstr(2,(wincol/2)-3,'Kveiki',curses.A_BOLD)
-	stdscr.addstr(3,(wincol/2)-5,'wersja: 0.8',curses.A_NORMAL)
+	stdscr.addstr(3,(wincol/2)-5,'version 0.8',curses.A_NORMAL)
 	
-	stdscr.addstr(5,(wincol/2)-11,'Wykorzystuje:',curses.A_NORMAL)
-	stdscr.addstr(5,(wincol/2)+3,'Python 2',curses.A_BOLD)
-	stdscr.addstr(6,(wincol/2)-11,'oraz bibliotekę Curses',curses.A_NORMAL)
+	stdscr.addstr(5,(wincol/2)-11,' Powered by: ',curses.A_NORMAL)
+	stdscr.addstr(5,(wincol/2)+2,'Python 2',curses.A_BOLD)
+	stdscr.addstr(6,(wincol/2)-11,'  and Curses library  ',curses.A_NORMAL)
 	
 	stdscr.addstr(8,(wincol/2)-2,'2013',curses.A_BOLD)
 	stdscr.addstr(9,(wincol/2)-7,'Marek Ciążyński',curses.A_BOLD)
-	
-	stdscr.addstr(11,(wincol/2)-20,'Na licencji Creative Commons (CC-BY 3.0)',curses.A_DIM)
-	stdscr.addstr(12,(wincol/2)-11,'www.creativecommons.org',curses.A_DIM+curses.A_UNDERLINE)
 	stdscr.getch()
-
-#print 'Wybierz zestaw'
-#for i in dirs_with_lvl:
-#	print ' '+str(dirs_with_lvl.index(i)+1)+'. '+str(i)
-#choose = len(dirs_with_lvl)+1
-#while choose > len(dirs_with_lvl) or choose == 0:
-#	try:
-#		choose=input('Numer zestawu: ')
-#	except:
-#		choose = 1
 
 
 
@@ -836,8 +822,8 @@ def main_game():
 		winlin, wincol =  stdscr.getmaxyx()
 		xx=(wincol/2)
 		yy=winlin/2
-		stdscr.addstr(yy-1,xx-7,'Powieksz okno,',curses.A_BOLD)
-		stdscr.addstr(yy,xx-9,'aby rozpoczac gre!',curses.A_BOLD)
+		stdscr.addstr(yy-1,xx-7,'Resize window,',curses.A_BOLD)
+		stdscr.addstr(yy,xx-9,'in order to play!',curses.A_BOLD)
 		stdscr.refresh()
 
 	#Rysowanie poziomu
@@ -906,7 +892,7 @@ def main_game():
 	must_reset = False
 	while gracz.finish == False:
 		winlin, wincol =  stdscr.getmaxyx()
-		stdscr.addstr(winlin-2,0,'Monety:', curses.color_pair(6) )
+		stdscr.addstr(winlin-2,0,'Coins:', curses.color_pair(6) )
 		stdscr.addstr(winlin-2,9,str(gracz.coins)+'/'+str(gracz.coinsMAX), curses.color_pair(10) )
 
 		now_time=time.time()
@@ -918,7 +904,7 @@ def main_game():
 		minutes=str(minutes)
 		if len(sec)==1: sep='0'
 		else: sep=''
-		stdscr.addstr(winlin-2,16,'Czas:', curses.color_pair(6) )
+		stdscr.addstr(winlin-2,16,'Time:', curses.color_pair(6) )
 		stdscr.addstr(winlin-2,24,minutes+':'+sep+sec, curses.color_pair(10) )
 		if (lvl_structure[gracz.y][gracz.x-1]=='Z' and lvl_structure[gracz.y][gracz.x-2] == 'C' and (lvl_structure[gracz.y-1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x-1] in gracz.solid) and  lvl_structure[gracz.y-1][gracz.x-2] in gracz.solid and lvl_structure[gracz.y+1][gracz.x-2] in gracz.solid and lvl_structure[gracz.y][gracz.x-3] in gracz.solid) or (lvl_structure[gracz.y][gracz.x+1]=='Z' and lvl_structure[gracz.y][gracz.x+2] == 'C' and (lvl_structure[gracz.y-1][gracz.x+1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x+1] in gracz.solid) and  lvl_structure[gracz.y-1][gracz.x+2] in gracz.solid and lvl_structure[gracz.y+1][gracz.x+2] in gracz.solid and lvl_structure[gracz.y][gracz.x+3] in gracz.solid) or (lvl_structure[gracz.y-1][gracz.x]=='Z' and lvl_structure[gracz.y-2][gracz.x] == 'C' and (lvl_structure[gracz.y-1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y-1][gracz.x+1] in gracz.solid) and  lvl_structure[gracz.y-2][gracz.x-1] in gracz.solid and lvl_structure[gracz.y-2][gracz.x+1] in gracz.solid and lvl_structure[gracz.y-3][gracz.x] in gracz.solid) or (lvl_structure[gracz.y+1][gracz.x]=='Z' and lvl_structure[gracz.y+2][gracz.x] == 'C' and (lvl_structure[gracz.y+1][gracz.x-1] in gracz.solid or lvl_structure[gracz.y+1][gracz.x+1] in gracz.solid) and lvl_structure[gracz.y+2][gracz.x-1] in gracz.solid and lvl_structure[gracz.y+2][gracz.x+1] in gracz.solid and lvl_structure[gracz.y+3][gracz.x] in gracz.solid):
 			must_reset = True
@@ -950,6 +936,6 @@ def main_game():
 		#elif key == ord('f'): curses.flash()
 
 
-# Główny kod programu :D
+# Main code
 os.putenv("ESCDELAY", "0")
 main_menu()
